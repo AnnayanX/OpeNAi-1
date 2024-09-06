@@ -1,10 +1,10 @@
-from flask import Flask, render_template_string
+from flask import Flask
 
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return render_template_string('<html><body><h1><b>@DhanRakShak</b></h1></body></html>')
+    return '@DHANRAKSHAK'
 
 if __name__ == '__main__':
     app.run(debug=True)
