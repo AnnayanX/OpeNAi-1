@@ -7,13 +7,15 @@ app = Flask(__name__)
 # Configuration for API and Telegram Bot
 API_KEY = "8790dce6c8ea45cdb0bed5e8bfe784c9"
 ENDPOINT = "https://questionai.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-02-15-preview"
-TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
-TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
+TELEGRAM_BOT_TOKEN = "7282854458:AAEgIt3OigoszFAFGnrYcnvJbIlRbDN9E4I"
+TELEGRAM_CHAT_ID = "-1002151632725"
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/"
 
-# Ensure environment variables are loaded
-if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-    raise ValueError("Telegram bot token and chat ID must be set as environment variables.")
+# Headers for the request
+headers = {
+    "Content-Type": "application/json",
+    "api-key": API_KEY,
+}
 
 @app.route('/')
 def index():
