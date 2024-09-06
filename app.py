@@ -4,8 +4,8 @@ import requests
 
 app = Flask(__name__)
 
-# Access environment variables
-TELEGRAM_API_TOKEN = os.getenv('TELEGRAM_API_TOKEN', '7282854458:AAEgIt3OigoszFAFGnrYcnvJbIlRbDN9E4I')
+# Access environment variables set in Vercel
+TELEGRAM_API_TOKEN = os.getenv('TELEGRAM_API_TOKEN')
 OPENAI_ENDPOINT = os.getenv('OPENAI_ENDPOINT')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 CHAT_ID = os.getenv('CHAT_ID')  # Use CHAT_ID here
@@ -19,14 +19,42 @@ def send_message(chat_id, text):
 
 def get_openai_response(query):
     headers = {
-        'Authorization': f'Bearer {OPENAI_API_KEY}',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'api-key': OPENAI_API_KEY,
     }
-    data = {
-        'query': query
+    payload = {
+        'messages': [
+            {
+                'role': 'system',
+                'content': [
+                    {
+                        'type': 'text',
+                        'text': 'You are an AI assistant that helps people find information.'
+                    }
+                ]
+            },
+            {
+                'role': 'user',
+                'content': [
+                    {
+                        'type': 'text',
+                        'text': query
+                    }
+                ]
+            }
+        ],
+        'temperature': 0.7,
+        'top_p': 0.95,
+        'max_tokens': 800
     }
-    response = requests.post(f'{OPENAI_ENDPOINT}/v1/query', headers=headers, json=data)
-    return response.json().get('answer', 'No answer found.')
+    try:
+        response = requests.post(OPENAI_ENDPOINT, headers=headers, json=payload)
+        response.raise_for_status()
+        response_data = response.json()
+        answer = response_data.get('choices', [{}])[0].get('message', {}).get('content', 'No response content')
+        return answer
+    except requests.RequestException as e:
+        return f"Failed to make the request. Error: {e}"
 
 @app.route('/')
 def index():
