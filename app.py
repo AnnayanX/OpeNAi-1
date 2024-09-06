@@ -88,21 +88,7 @@ def count_tokens(text):
 
 @app.route('/')
 def index():
-    # Serve a custom HTML page with the message
-    html_content = """
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>DhanRakshak</title>
-    </head>
-    <body>
-        <h1>@Dhanrakshak Love</h1>
-    </body>
-    </html>
-    """
-    return render_template_string(html_content)
+    return send_from_directory('static', 'index.html')
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
