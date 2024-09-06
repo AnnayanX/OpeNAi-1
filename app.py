@@ -103,12 +103,16 @@ def webhook():
         return jsonify(success=False), 400
 
     try:
-        if text == '/start':
+        # Check if the message starts with the '/ask' command
+        if text.startswith('/ask'):
+            query = text[len('/ask '):].strip()
+            if query:
+                answer = get_openai_response(query)
+                send_message(chat_id, answer)
+            else:
+                send_message(chat_id, "Please provide a query after the /ask command.")
+        elif text == '/start':
             send_message(chat_id, "I am working")
-        elif text.startswith('/ask'):
-            query = text[len('/ask '):]
-            answer = get_openai_response(query)
-            send_message(chat_id, answer)
     except Exception as e:
         send_message(CHAT_ID, f"Error processing message: {e}")
 
