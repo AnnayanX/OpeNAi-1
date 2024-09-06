@@ -1,6 +1,7 @@
-from flask import Flask, request, jsonify, render_template_string
+from flask import Flask, request, jsonify, render_template
 import os
 import requests
+import time
 
 app = Flask(__name__)
 
@@ -86,6 +87,10 @@ def count_tokens(text):
     # Simple token count; for accurate token counting, use a tokenizer
     return len(text.split())
 
+@app.route('/')
+def index():
+    # Render index.html and pass any variables if needed
+    return render_template('index.html', username='Dhanrakshak')
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
