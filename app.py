@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from telegram import Update, Bot
 import os
 import requests
@@ -27,6 +27,10 @@ def get_openai_response(query):
     }
     response = requests.post(f'{OPENAI_ENDPOINT}/v1/query', headers=headers, json=data)
     return response.json().get('answer', 'No answer found.')
+
+@app.route('/')
+def index():
+    return send_from_directory('static', 'index.html')
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
