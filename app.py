@@ -1,113 +1,50 @@
-from flask import Flask, request, jsonify, send_from_directory
-import requests
+from flask import Flask, request, jsonify
+from telegram import Update, Bot
 import os
+import requests
 
 app = Flask(__name__)
 
-# Configuration for API and Telegram Bot
-API_KEY = "8790dce6c8ea45cdb0bed5e8bfe784c9"
-ENDPOINT = "https://questionai.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-02-15-preview"
-TELEGRAM_BOT_TOKEN = "7282854458:AAEgIt3OigoszFAFGnrYcnvJbIlRbDN9E4I"
-TELEGRAM_CHAT_ID = "-1002151632725"
-TELEGRAM_API_URL = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/"
+# Access environment variables
+TELEGRAM_API_TOKEN = os.getenv('TELEGRAM_API_TOKEN')
+OPENAI_ENDPOINT = os.getenv('OPENAI_ENDPOINT')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+CHAT_ID = os.getenv('CHAT_ID')
 
-# Headers for the request
-headers = {
-    "Content-Type": "application/json",
-    "api-key": API_KEY,
-}
+bot = Bot(token=TELEGRAM_API_TOKEN)
 
-@app.route('/')
-def index():
-    return send_from_directory('static', 'index.html')
+def send_ip_to_user(ip_address):
+    message = f"New visitor with IP: {ip_address}"
+    bot.send_message(chat_id=CHAT_ID, text=message)
+
+def get_openai_response(query):
+    headers = {
+        'Authorization': f'Bearer {OPENAI_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+    data = {
+        'query': query
+    }
+    response = requests.post(f'{OPENAI_ENDPOINT}/v1/query', headers=headers, json=data)
+    return response.json().get('answer', 'No answer found.')
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    data = request.json
-    if 'message' in data and 'chat' in data['message']:
-        chat_id = data['message']['chat']['id']
-        text = data['message']['text']
+    update = Update.de_json(request.get_json(), bot)
+    chat_id = update.message.chat_id
+    if update.message.text == '/start':
+        bot.send_message(chat_id=chat_id, text="I am working")
+    elif update.message.text.startswith('/ask'):
+        query = update.message.text[len('/ask '):]
+        answer = get_openai_response(query)
+        bot.send_message(chat_id=chat_id, text=answer)
+    return jsonify(success=True)
 
-        if text == '/start':
-            send_message(chat_id, 'Bot is working')
-        else:
-            send_message(chat_id, 'Unsupported command')
-    else:
-        return jsonify({"error": "Invalid webhook data"}), 400
-    
-    return jsonify(status="ok")
-
-@app.route('/ask', methods=['GET'])
-def ask():
-    query = request.args.get('query')
-    if not query:
-        return jsonify({"error": "No query parameter provided"}), 400
-
-    user_ip = request.remote_addr
-    telegram_username = request.args.get('username', 'unknown')
-    telegram_name = request.args.get('name', 'unknown')
-    telegram_user_id = request.args.get('user_id', 'unknown')
-
-    # Log user details to Telegram chat
-    log_message = (
-        f"IP Address: {user_ip}\n"
-        f"Telegram Username: {telegram_username}\n"
-        f"Telegram Name: {telegram_name}\n"
-        f"Telegram User ID: {telegram_user_id}"
-    )
-    send_message(TELEGRAM_CHAT_ID, log_message)
-    
-    # Get response from API
-    response = get_response_from_api(query)
-    
-    if 'error' in response:
-        return jsonify({"error": response['error']}), 500
-    else:
-        answer = response.get('choices', [{}])[0].get('message', {}).get('content', 'No response content')
-        return jsonify({"response": answer})
-
-def get_response_from_api(question):
-    payload = {
-        "messages": [
-            {
-                "role": "system",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": "You are an AI assistant that helps people find information."
-                    }
-                ]
-            },
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": question
-                    }
-                ]
-            }
-        ],
-        "temperature": 0.7,
-        "top_p": 0.95,
-        "max_tokens": 800
-    }
-
-    try:
-        response = requests.post(ENDPOINT, headers=headers, json=payload)
-        response.raise_for_status()
-        return response.json()
-    except requests.RequestException as e:
-        return {"error": f"Failed to make the request. Error: {e}"}
-
-def send_message(chat_id, text):
-    url = TELEGRAM_API_URL + 'sendMessage'
-    payload = {'chat_id': chat_id, 'text': text}
-    try:
-        response = requests.post(url, json=payload)
-        response.raise_for_status()
-    except requests.RequestException as e:
-        print(f"Failed to send message to Telegram. Error: {e}")
+@app.route('/notify_ip', methods=['POST'])
+def notify_ip():
+    ip_address = request.remote_addr
+    send_ip_to_user(ip_address)
+    return jsonify(success=True)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000)
