@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 import os
 import requests
 
@@ -88,7 +88,8 @@ def count_tokens(text):
 
 @app.route('/')
 def index():
-    return 'Bot is running'
+    # Serve the HTML file from the 'static' directory
+    return send_from_directory('static', 'index.html')
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
