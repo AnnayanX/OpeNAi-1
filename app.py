@@ -86,9 +86,6 @@ def count_tokens(text):
     # Simple token count; for accurate token counting, use a tokenizer
     return len(text.split())
 
-@app.route('/')
-def index():
-    return send_from_directory('static', 'index.html')
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
